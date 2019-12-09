@@ -142,9 +142,9 @@ class Squeakquel extends Datastore {
 
         config.benchmark = true;
         config.logging = (log, time) => {
-            if (time >= this.slowlogThreshold) {
-                logger.info(`Slow log detected: ${log}, executed in ${time}ms`);
-            }
+            // if (time >= this.slowlogThreshold) {
+            logger.info(`Slow log detected: ${log}, executed in ${time}ms`);
+            // }
         };
         this.prefix = config.prefix || '';
 
@@ -168,6 +168,7 @@ class Squeakquel extends Datastore {
             this.tables[model.tableName] = table;
             this.models[model.tableName] = model;
         });
+        this.tables['templates'].associate = this.tables['templates'].hasMany(this.tables['templates'], {foreignKey: 'id', as: 'test',sourceKey: 'id'});
     }
 
     /**
@@ -472,14 +473,13 @@ class Squeakquel extends Datastore {
             // every other selected field must be aggregated so database engine won't complain
             // use "MAX" since the nature of this table is append-only
             findParams.attributes = includedFields.map((field) => {
-                let col = Sequelize.col(field);
+                let col = Sequelize.col(`templates.${field}`);
 
                 // Cast boolean to integer
                 // It is safer for most dialect to cast to integer instead of other integer type like smallint
                 if (fields[field] && fields[field].type === 'boolean') {
                     col = Sequelize.cast(col, 'integer');
                 }
-
                 return [col, field];
             });
 
@@ -499,6 +499,26 @@ class Squeakquel extends Datastore {
             }).slice(0, -1);
 
             findParams.where = { id: { [Sequelize.Op.eq]: this.client.literal(`(${subQuery})`) } };
+            findParams.include = {
+                attributes: ['trusted'],
+                as: 'test',
+                model: this.tables['templates'],
+                required: true
+            };
+
+            console.log('----------------実験--------------')
+            let templateModel = this.tables['templates'];
+            console.log('---- associate ----');
+            console.log(templateModel.associate);
+            console.log('------------ include -------------');
+            console.log(findParams.include.attributes.include = {attributes: ['trusted'],model: this.tables['templates'], as: 'test'});
+            // templateModel.associate = templateModel.hasMany(templateModel, {foreignKey: 'id', as: 'test222',sourceKey: 'id'});
+            this.tables['templates'].findAll(findParams).then(data => {
+                console.log('---------------- soto ----------------------');
+                console.log(data)
+                console.log('----------------- naka ----------------------');
+                console.log(data[0].test);
+            });
         }
 
         if (config.sort === 'ascending') {
@@ -506,10 +526,38 @@ class Squeakquel extends Datastore {
         } else {
             findParams.order = [[sortKey, 'DESC']];
         }
+        
+        // model値チェック
+        // this.tablesにテーブル一覧が入っている。
+
+
+        // --------------- inner join で動くサンプル--------------------
+        // let templateModel = this.tables['templates'];
+        // let userModel = this.tables['users'];
+
+        // templateModel.associate = templateModel.hasMany(userModel,{foreignKey: 'id'})
+        // userModel.associate =  userModel.belongsTo(templateModel, {foreignKey: 'id'});
+
+        // templateModel.findAll({
+        //     where: {
+        //         id:1
+        //     },
+        //     include: {
+        //         model: userModel,
+        //         required: true
+        //     }
+        // }).then(data=>{console.log(data[0].users[0])});
+
+        // // delete templateModel.associate;
+
 
         return table.findAll(findParams)
             .then(items => Promise.all(items.map(item =>
-                decodeFromDialect(this.client.getDialect(), item, model))));
+                {
+                    // console.log('--------------------item-----------------');    
+                    // console.log(item);
+                return decodeFromDialect(this.client.getDialect(), item, model)
+                })));
     }
 }
 
