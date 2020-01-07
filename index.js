@@ -3,6 +3,7 @@
 /* eslint new-cap: ["error", { "capIsNewExceptionPattern": "^Sequelize\.." }] */
 /* eslint no-underscore-dangle: ["error", { "allowAfterThis": true }] */
 
+console.log('xcvzv');
 const Datastore = require('screwdriver-datastore-base');
 const schemas = require('screwdriver-data-schema');
 const Sequelize = require('sequelize');
@@ -119,6 +120,13 @@ function getSequelizeTypeFromJoi(dialect, type, rules) {
     case 'binary':
         return Sequelize.BLOB;
     case 'alternatives':
+        // console.log('bbb');
+        if (length) {
+            // console.log('aaa');
+
+            return Sequelize.STRING(length);
+        }
+
         return Sequelize.TEXT('medium');
     default:
         return null;
@@ -189,15 +197,54 @@ class Squeakquel extends Datastore {
             indexes: schema.indexes
         };
 
+        console.log('===tableName===');
+        console.log(tableName);
+
         Object.keys(fields).forEach((fieldName) => {
             const field = fields[fieldName];
+
+            let rules;
+
+            // console.log(field.alternatives);
+            if (field.alternatives) {
+                // console.log('cccc');
+                // console.log(fieldName);
+                // console.log(field.rules);
+                // console.log(field.alternatives[0].rules);
+                // console.log('cccc');
+                rules = field.alternatives[0].rules;
+            } else {
+                rules = field.rules;
+            }
+
+            // rules = field.rules;
+            console.log('-----fieldName-----');
+            console.log(fieldName);
+            console.log('---rules---');
+            console.log(rules);
+
             const output = {
                 type: getSequelizeTypeFromJoi(
                     this.client.getDialect(),
                     field.type,
-                    field.rules || []
+                    // field.rules || []
+                    rules || []
                 )
             };
+
+            console.log('---output---');
+            console.log(output);
+
+            if (tableName === 'triggers') {
+                // console.log('zzz');
+                // console.log(rules);
+                // console.log('nnnn');
+                // console.log(fieldName);
+                // console.log(field);
+                // if (field.alternatives) {
+                //     console.log(field.alternatives[0]);
+                // }
+            }
 
             if (fieldName === 'id') {
                 output.primaryKey = true;
@@ -213,6 +260,14 @@ class Squeakquel extends Datastore {
         });
 
         // @TODO Indexes and Range Keys
+        console.log('before call define');
+        console.log('111 tableName 111');
+        console.log(tableName);
+        console.log('222 tableFields 222');
+        console.log(tableFields);
+        console.log('333 tabuleOptions 333');
+        console.log(tableOptions);
+
         return this.client.define(tableName, tableFields, tableOptions);
     }
 

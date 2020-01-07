@@ -158,7 +158,7 @@ describe('index test', function () {
         mockery.disable();
     });
 
-    describe('constructor', () => {
+    describe.only('constructor', () => {
         it('constructs the clients', () => {
             datastore = new Datastore({
                 dialect: 'sqlite'
@@ -181,11 +181,13 @@ describe('index test', function () {
                     autoIncrement: true
                 },
                 src: {
-                    type: Sequelize.TEXT('medium'),
+                    // type: Sequelize.TEXT('medium'),
+                    type: Sequelize.INTEGER.UNSIGNED,
                     unique: 'uniquerow'
                 },
                 dest: {
-                    type: Sequelize.TEXT('medium'),
+                    // type: Sequelize.TEXT('medium'),
+                    type: Sequelize.INTEGER.UNSIGNED,
                     unique: 'uniquerow'
                 }
             });
